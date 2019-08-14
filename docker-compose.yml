@@ -1,0 +1,32 @@
+version: "3.7"
+services:
+  web:
+    image: ruby:2.6-alpine
+    container_name: backend
+    command: ["ruby", "server.rb"]
+    depends_on:
+      - proxy
+    stdin_open: true  # for debugging
+    tty: true
+    volumes:
+      - type: bind
+        source: .
+        target: /usr/src/app
+    working_dir: /usr/src/app
+  proxy:
+    image: eeacms/apache:alpine
+    container_name: proxy
+    environment:
+      APACHE_CONFIG: |-
+        <VirtualHost *:80>
+          ServerAdmin contact@localhost
+          ServerName localhost
+          ErrorLog /var/log/apache.log
+
+          RewriteEngine On
+          # ProxyPreserveHost On
+          RewriteRule ^/foo/(.*) http://backend:8080/$$1 [P]
+        </VirtualHost>
+    ports:
+      - 80:80
+
